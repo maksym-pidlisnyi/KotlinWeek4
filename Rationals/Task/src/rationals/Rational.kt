@@ -1,5 +1,6 @@
 package rationals
 
+import java.lang.IllegalArgumentException
 import java.math.BigInteger
 
 
@@ -37,43 +38,68 @@ fun main() {
             "1824032980372593840238402384283940832058".toBigInteger() == 1 divBy 2)
 }
 
+//fun String.toRational(): Rational {
+//    return if ('/' in this) {
+//        val index = this.indexOf('/')
+//        val n = this.substring(0, index).toBigInteger()
+//        val d = this.substring(index + 1).toBigInteger()
+//        Rational(n, d)
+//    } else
+//        Rational(this.toBigInteger(), 1.toBigInteger())
+//}
+
 fun String.toRational(): Rational {
-    return if ('/' in this) {
-        val index = this.indexOf('/')
-        val n = this.substring(0, index).toBigInteger()
-        val d = this.substring(index + 1).toBigInteger()
-        Rational.create(n, d)
-    } else
-        Rational.create(this.toBigInteger(), 1.toBigInteger())
+    fun String.toBigIntegerOrFail() =
+            toBigIntegerOrNull() ?: throw IllegalArgumentException(
+                    "Expecting rational in the form ig 'n/d', or 'n', was: '${this@toRational}'"
+            )
+    if (!contains("/"))
+        return Rational(toBigIntegerOrFail(), BigInteger.ONE)
+    val parts = split("/")
+    return Rational(parts[0].toBigInteger(), parts[1].toBigInteger())
 }
 
 ///
 infix fun BigInteger.divBy(denominator: BigInteger) : Rational {
-    return Rational.create(this, denominator)
+    return Rational(this, denominator)
 }
 
 infix fun Int.divBy(denominator: Int) : Rational {
-    return Rational.create(this.toBigInteger(), denominator.toBigInteger())
+    return Rational(this.toBigInteger(), denominator.toBigInteger())
 }
 
 infix fun Long.divBy(denominator: Long) : Rational {
-    return Rational.create(this.toBigInteger(), denominator.toBigInteger())
+    return Rational(this.toBigInteger(), denominator.toBigInteger())
 }
 ///
 
-@Suppress("DataClassPrivateConstructor")
-class Rational
-private constructor(private val numerator: BigInteger, private val denominator: BigInteger) : Comparable<Rational> {
+//@Suppress("DataClassPrivateConstructor")
+//data class Rational
+//private constructor(private val numerator: BigInteger, private val denominator: BigInteger) : Comparable<Rational> {
+//
+//    companion object {
+//        fun create(numerator: BigInteger, denominator: BigInteger) = normalize(numerator, denominator)
+//        private fun normalize(numerator: BigInteger, denominator: BigInteger) : Rational {
+//            val gcd = numerator.gcd(denominator)
+//            val sign = denominator.signum().toBigInteger()
+//            return Rational(numerator / gcd * sign, denominator / gcd * sign)
+//        }
+//    }
 
-    companion object {
-        fun create(numerator: BigInteger, denominator: BigInteger) = normalize(numerator, denominator)
-        private fun normalize(numerator: BigInteger, denominator: BigInteger) : Rational {
-            val gcd = numerator.gcd(denominator)
-            val sign = denominator.signum().toBigInteger()
-            return Rational(numerator / gcd * sign, denominator / gcd * sign)
+class Rational(n: BigInteger, d: BigInteger) : Comparable<Rational> {
+    val numerator : BigInteger
+    val denominator : BigInteger
+
+    init {
+        require(d != BigInteger.ZERO) {
+            "Denominator must be non-zero"
         }
+        val g = n.gcd(d)
+        val sign = d.signum().toBigInteger()
+        numerator = n / g * sign
+        denominator = d / g * sign
+//        println("Rational number $numerator/$denominator was created!")
     }
-
 
     operator fun unaryMinus() = Rational(-numerator, denominator)
 
@@ -99,6 +125,24 @@ private constructor(private val numerator: BigInteger, private val denominator: 
             "$numerator"
         }else
             "$numerator/$denominator"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Rational
+
+        if (numerator != other.numerator) return false
+        if (denominator != other.denominator) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = numerator.hashCode()
+        result = 31 * result + denominator.hashCode()
+        return result
     }
 
 }
