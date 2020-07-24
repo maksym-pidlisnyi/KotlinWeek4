@@ -42,39 +42,38 @@ fun String.toRational(): Rational {
         val index = this.indexOf('/')
         val n = this.substring(0, index).toBigInteger()
         val d = this.substring(index + 1).toBigInteger()
-        Rational(n, d)
+        Rational.create(n, d)
     } else
-        Rational(this.toBigInteger(), 1.toBigInteger())
+        Rational.create(this.toBigInteger(), 1.toBigInteger())
 }
 
 ///
 infix fun BigInteger.divBy(denominator: BigInteger) : Rational {
-    return Rational(this, denominator)
+    return Rational.create(this, denominator)
 }
 
 infix fun Int.divBy(denominator: Int) : Rational {
-    return Rational(this.toBigInteger(), denominator.toBigInteger())
+    return Rational.create(this.toBigInteger(), denominator.toBigInteger())
 }
 
 infix fun Long.divBy(denominator: Long) : Rational {
-    return Rational(this.toBigInteger(), denominator.toBigInteger())
+    return Rational.create(this.toBigInteger(), denominator.toBigInteger())
 }
 ///
 
-data class Rational(var numerator: BigInteger, var denominator: BigInteger) : Comparable<Rational> {
+@Suppress("DataClassPrivateConstructor")
+class Rational
+private constructor(private val numerator: BigInteger, private val denominator: BigInteger) : Comparable<Rational> {
 
-    init {
-        normalize(this)
-//        println("Rational number $numerator/$denominator was created!")
+    companion object {
+        fun create(numerator: BigInteger, denominator: BigInteger) = normalize(numerator, denominator)
+        private fun normalize(numerator: BigInteger, denominator: BigInteger) : Rational {
+            val gcd = numerator.gcd(denominator)
+            val sign = denominator.signum().toBigInteger()
+            return Rational(numerator / gcd * sign, denominator / gcd * sign)
+        }
     }
 
-    private fun normalize(rational: Rational) : Rational {
-        val gcd = rational.numerator.gcd(denominator)
-        val sign = rational.denominator.signum().toBigInteger()
-        rational.numerator /= gcd * sign
-        rational.denominator /= gcd * sign
-        return rational
-    }
 
     operator fun unaryMinus() = Rational(-numerator, denominator)
 
