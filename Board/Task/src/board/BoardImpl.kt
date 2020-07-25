@@ -8,7 +8,14 @@ fun createSquareBoard(width: Int): SquareBoard {
     sq.cells = createEmptyBoard(width)
     return sq
 }
-fun <T> createGameBoard(width: Int): GameBoard<T> = TODO()
+
+fun <T> createGameBoard(width: Int): GameBoard<T> {
+    val gb = GameBoardImpl<T>(width)
+    gb.cells = createEmptyBoard(width)
+    gb.cells.forEach { it.forEach { cell: Cell -> gb.cellsV += cell to null } }
+    return gb
+}
+
 
 //redo
 fun createEmptyBoard(width: Int) : Array<Array<Cell>> {
@@ -64,29 +71,21 @@ open class SquareBoardImpl(override val width: Int) : SquareBoard {
 
 class GameBoardImpl<T>(override val width: Int) : GameBoard<T>, SquareBoardImpl(width) {
 
-    override fun get(cell: Cell): T? {
-        TODO("Not yet implemented")
-    }
+    val cellsV = mutableMapOf<Cell, T?>()
+
+    override fun get(cell: Cell): T? = cellsV[cell]
 
     override fun set(cell: Cell, value: T?) {
-        TODO("Not yet implemented")
+        cellsV += cell to value
     }
 
-    override fun filter(predicate: (T?) -> Boolean): Collection<Cell> {
-        TODO("Not yet implemented")
-    }
+    override fun filter(predicate: (T?) -> Boolean) = cellsV.filterValues { predicate.invoke(it) }.keys
 
-    override fun find(predicate: (T?) -> Boolean): Cell? {
-        TODO("Not yet implemented")
-    }
+    override fun find(predicate: (T?) -> Boolean) = cellsV.filter { predicate.invoke(it.value) }.keys.first()
 
-    override fun any(predicate: (T?) -> Boolean): Boolean {
-        TODO("Not yet implemented")
-    }
+    override fun any(predicate: (T?) -> Boolean) = cellsV.values.any(predicate)
 
-    override fun all(predicate: (T?) -> Boolean): Boolean {
-        TODO("Not yet implemented")
-    }
+    override fun all(predicate: (T?) -> Boolean) = cellsV.values.all(predicate)
 }
 
 data class CellImpl(override val i: Int, override val j: Int) : Cell {
